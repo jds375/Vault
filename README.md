@@ -5,6 +5,8 @@ Security is a critical issue in modern software that is becoming ever more impor
 
 Luckily, Hashicorp has released an open source solution for managing 'secrets' (passwords, api keys, certificates, credentials, etc.) called Vault. While it is pretty well documented, it is not documented well enough that a security 'noob' like myself could pick it up and after a bit of work have production-ready security. Below is my guide to setting it up and using it to manage account credentials for a collection of users on a Mac/Linux computer. As you're reading if you notice any errors or security flaws, please let me know so I can improve this guide and my understanding!
 
+Before following this guide, make sure you download and install vault according to their guide and you have a new folder ready to go with the 'vault' executable in it.
+
 ###Configuring the Server###
 The first step is to configure the Vault server to run securely. The first step is settuing up Transport Layer Security (TLS). TLS basically ensures that when a client and a server are communicating all of the information shared is private and cannot be tampered with. This requires us to generate a TLS certificate. In reality this will have to be done using a trusted Certificate Authority (CA), but for now we'll generate and use our own. There are several reasons for doing this. The two most important are probably that these certificates can cost a fair bit of money from a trusted site and that for local sandboxed development you will likely want to use a self-generated certificate anyway (to save money, time, and allow for scability for multiple developers). 
 
@@ -83,4 +85,45 @@ $ ./vault server -config=vault.conf
 Finally, we can initialize the server using the following command:
 ```bash
 $ ./vault init -ca-cert=root.cer
+```
+Make sure to save and/or write down the 5 keys and the root token. We will need them for the next steps.
+
+###Unsealing the Vault###
+By default the vault is sealed. While the vault is sealed, there really isn't much you can do on the administrative end. So, our first order of business will be to unseal the vault. Let us begin by checking the status with the following command:
+```bash
+$ ./vault status -ca-cert=root.cer
+```
+You should see a response similar to:
+```
+Sealed: true
+Key Shares: 5
+Key Threshold: 3
+Unseal Progress: 0
+
+High-Availability Enabled: false
+```
+What this means is that there are 5 distributed keys available (which you should have received during initialization) and it will take 3 of those 5 keys to unseal the vault. Using any of the three keys, unseal the vault:
+```bash
+$ ./vault unseal -ca-cert=root.cer <key 1>
+$ ./vault unseal -ca-cert=root.cer <key 2>
+$ ./vault unseal -ca-cert=root.cer <key 3>
+```
+As you enter each command you will be informed of your progress. Now if we check the vault status as we did earlier it should say that the vault is no longer sealed.
+
+###Mounting the Backend###
+Now that we have our sever securely up and running and unsealed we need to actually set it up to be used. Here we will be using the 'userpass' backend, which is perfect for managing account credentials. Before making the following configuration commands we need to verify that we have access to the root token (which we received following our initialization method). We can do this with the following command:
+```bash
+$ export VAULT_TOKEN=<root token>
+```
+Now that we have the proper permissions, we will begin by enabling the 'userpass' backend:
+```bash
+$ ./vault auth-enable -ca-cert=root.cer userpass
+```
+Now that we have enabled the backend we can add new accounts and verify username/password combinations. A user can be added via:
+```bash
+$ ./vault write -ca-cert=root.cer auth/userpass/users/<username> password=<password>
+```
+We can check if a user/password combination is valid with the following:
+```bash
+$ ./vault auth -ca-cert=root.cer -method=userpass username=<username> password=<password>
 ```
