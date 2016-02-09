@@ -110,7 +110,7 @@ $ ./vault unseal -ca-cert=root.cer <key 3>
 ```
 As you enter each command you will be informed of your progress. Now if we check the vault status as we did earlier it should say that the vault is no longer sealed.
 
-###Mounting the Backend###
+###Setting up the Userpass Backend###
 Now that we have our sever securely up and running and unsealed we need to actually set it up to be used. Here we will be using the 'userpass' backend, which is perfect for managing account credentials. Before making the following configuration commands we need to verify that we have access to the root token (which we received following our initialization method). We can do this with the following command:
 ```bash
 $ export VAULT_TOKEN=<root token>
@@ -127,3 +127,28 @@ We can check if a user/password combination is valid with the following:
 ```bash
 $ ./vault auth -ca-cert=root.cer -method=userpass username=<username> password=<password>
 ```
+Vault explicitly warns in their documentation that writing secrets using arguments in the CLI should be avoided. Instead, we should use filess for the data. We can modify the commands above as follows for writing and then reading, respectively:
+```bash
+$ ./vault write -ca-cert=root.cer auth/userpass/users/<username> @pword.json
+$ ./vault auth -ca-cert=root.cer -method=userpass @account.json
+```
+where pword.json and account.json are as follows, respectively:
+```
+{
+    "password": "<password>"
+}
+----------------------------
+{
+    "username": "<username>"
+    "password": "<password>"
+}
+```
+
+
+
+
+
+
+
+
+
