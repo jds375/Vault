@@ -12,7 +12,7 @@ The first step is to configure the Vault server to run securely. The first step 
 
 We begin by generating a root certificate. This can be done using the command: 
 ```bash
-$ openssl req -newkey rsa:2048 -days 3650 -x509 -nodes -out root.cer
+$ openssl req -newkey rsa:2048 -days 3650 -x509 -nodes -out root.cer -keyout rootkey.pem
 ```
 This will prompt you to fill out a series of questions for your certificate. Fill them out properly. Next, we will generate a certificate and key. Fill out all of the information, but leave the challenge password and optional company name (last two prompts) blank since few CA's support this. Simply press enter to skip these fields. This can be done with:
 ```bash
@@ -33,7 +33,7 @@ new_certs_dir = /tmp
 unique_subject = no
 certificate = <full path to root.cer generated in step 1>
 database = <full path to certindex generated in step 3>
-private_key = <full path to privkey.pem generated in step 1>
+private_key = <full path to rootkey.pem generated in step 1>
 serial = <full path to serialfile generated in step 3>
 default_days = 365
 default_md = sha1
